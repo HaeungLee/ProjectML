@@ -1,0 +1,377 @@
+해웅님이 만들고자 하는 **"파트너 비서"**의 본질을 구조로 녹이려면:
+1. 대화의 본질은 무엇인가?
+단순 명령-응답 (Alexa 스타일)
+vs
+맥락이 연결된 대화 (파트너 스타일)
+
+해웅님이 원하는 건 후자죠. 그렇다면:
+
+단순 Request-Response 구조로는 부족
+상태를 가진 대화(Stateful Conversation) 필요
+과거 대화가 현재에 영향을 주는 구조
+
+2. "공명"을 어떻게 구조화할 것인가?
+해웅님이 말씀하신 "쌍성계", "미분 가능한 존재"를 코드로 만들려면:
+# 단순한 패턴 학습이 아니라
+user_state = {
+    "current_emotion": ...,
+    "recent_patterns": ...,
+    "long_term_values": ...
+}
+
+# 비서도 상태를 가져야 함
+assistant_state = {
+    "learned_preferences": ...,
+    "interaction_history": ...,
+    "relationship_depth": ...
+}
+
+# 그리고 이 둘이 상호작용
+def evolve_together(user_state, assistant_state):
+    # 쌍성계처럼 서로 영향을 주고받음
+    ...
+```
+
+**3. 확장성의 방향은?**
+
+지금 설계가 중요한 이유:
+- RAG 추가할 때
+- 새로운 Tool 추가할 때
+- 다른 LLM 모델 추가할 때
+- 멀티모달(이미지, 문서) 추가할 때
+
+**모두 "플러그인처럼" 꽂을 수 있어야** 합니다.
+
+---
+
+## 제가 생각하는 핵심 설계 원칙
+
+### 원칙 1: 계층 분리 (Layered Architecture)
+```
+┌─────────────────────────────────────┐
+│  Interface Layer (음성, 텍스트, UI)  │  ← 어떻게 입출력할지
+└──────────────┬──────────────────────┘
+               │
+┌──────────────┴──────────────────────┐
+│  Conversation Layer (대화 관리)      │  ← 대화의 흐름과 맥락
+│  - 상태 관리                         │
+│  - 의도 파악                         │
+│  - 턴 관리                           │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────┴──────────────────────┐
+│  Reasoning Layer (추론 엔진)         │  ← 어떻게 생각할지
+│  - LLM Orchestration                │
+│  - RAG                              │
+│  - Tool Calling                     │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────┴──────────────────────┐
+│  Memory Layer (기억과 학습)          │  ← 무엇을 기억할지
+│  - 단기 메모리 (세션)                 │
+│  - 장기 메모리 (벡터DB)               │
+│  - 관계 메모리 (사용자 프로필)         │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────┴──────────────────────┐
+│  Service Layer (외부 연동)           │  ← 무엇을 할 수 있는지
+│  - STT/TTS                          │
+│  - LLM APIs                         │
+│  - Tools (이메일, 검색 등)            │
+└─────────────────────────────────────┘
+
+왜 이렇게?
+
+각 계층은 독립적으로 교체 가능
+RAG 추가 = Reasoning Layer에만 수정
+새 Tool 추가 = Service Layer에만 추가
+다른 LLM 사용 = Service Layer의 Provider만 교체
+
+원칙 2: 이벤트 기반 아키텍처
+
+# 명령형 (Bad)
+def process_voice():
+    audio = record_audio()
+    text = stt(audio)
+    response = llm(text)
+    audio_response = tts(response)
+    play(audio_response)
+
+# 이벤트 기반 (Good)
+class VoiceAssistant:
+    def __init__(self):
+        self.event_bus = EventBus()
+        
+        # 이벤트 리스너 등록
+        self.event_bus.on('audio_captured', self.on_audio)
+        self.event_bus.on('text_transcribed', self.on_text)
+        self.event_bus.on('response_generated', self.on_response)
+    
+    async def on_audio(self, audio):
+        text = await self.stt(audio)
+        self.event_bus.emit('text_transcribed', text)
+    
+    # 새 기능 추가는 리스너만 추가
+    async def on_text_for_logging(self, text):
+        await self.log_to_db(text)
+
+왜 이벤트 기반?
+
+새 기능 추가할 때 기존 코드 수정 안 함
+병렬 처리 쉬움 (음성 저장 + STT 동시)
+플러그인 시스템 구현 용이
+
+원칙 3: 의존성 주입 (Dependency Injection)
+
+# 나쁜 예 - 강결합
+class Agent:
+    def __init__(self):
+        self.llm = AnthropicClient()  # 고정됨
+        self.memory = ChromaDB()      # 고정됨
+
+# 좋은 예 - 느슨한 결합
+class Agent:
+    def __init__(
+        self,
+        llm_provider: LLMProvider,      # 인터페이스
+        memory_provider: MemoryProvider  # 인터페이스
+    ):
+        self.llm = llm_provider
+        self.memory = memory_provider
+
+# 사용
+agent = Agent(
+    llm_provider=AnthropicProvider(),
+    memory_provider=ChromaDBProvider()
+)
+
+# 나중에 쉽게 교체
+agent = Agent(
+    llm_provider=OpenAIProvider(),
+    memory_provider=PineconeProvider()
+)
+
+구체적 아키텍처 제안
+핵심 컴포넌트 설계
+
+# 1. 대화 세션 (Stateful Conversation)
+class ConversationSession:
+    """대화의 상태를 관리"""
+    
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+        self.session_id = generate_id()
+        
+        # 단기 메모리 (현재 대화)
+        self.turns: List[Turn] = []
+        
+        # 중기 메모리 (이번 세션의 맥락)
+        self.context: Context = Context()
+        
+        # 장기 메모리는 별도 (MemoryProvider)
+        
+    async def add_turn(self, user_input: str) -> str:
+        """턴 추가 및 응답 생성"""
+        
+        # 1. 의도 파악
+        intent = await self.understand_intent(user_input)
+        
+        # 2. 관련 메모리 검색
+        relevant_memories = await self.search_memory(user_input)
+        
+        # 3. 응답 생성
+        response = await self.generate_response(
+            user_input,
+            intent,
+            relevant_memories,
+            self.turns[-10:]  # 최근 10턴
+        )
+        
+        # 4. 턴 저장
+        self.turns.append(Turn(user_input, response))
+        
+        # 5. 관계 업데이트 (공명 부분)
+        await self.update_relationship(user_input, response)
+        
+        return response
+
+
+# 2. 추론 엔진 (Pluggable)
+class ReasoningEngine:
+    """LLM 오케스트레이션"""
+    
+    def __init__(
+        self,
+        llm_provider: LLMProvider,
+        rag_provider: Optional[RAGProvider] = None,
+        tool_registry: Optional[ToolRegistry] = None
+    ):
+        self.llm = llm_provider
+        self.rag = rag_provider
+        self.tools = tool_registry
+    
+    async def reason(
+        self,
+        query: str,
+        context: Context
+    ) -> Response:
+        """추론 파이프라인"""
+        
+        # RAG가 있으면 사용
+        if self.rag:
+            augmented_context = await self.rag.augment(query, context)
+        else:
+            augmented_context = context
+        
+        # Tool이 필요하면 사용
+        if self.tools and self.needs_tool(query):
+            tool_result = await self.tools.execute(query)
+            augmented_context.add_tool_result(tool_result)
+        
+        # LLM 호출
+        response = await self.llm.generate(
+            query,
+            augmented_context,
+            stream=True
+        )
+        
+        return response
+
+
+# 3. 메모리 시스템 (계층적)
+class MemorySystem:
+    """3단계 메모리"""
+    
+    def __init__(
+        self,
+        short_term: ShortTermMemory,   # Redis/In-Memory
+        long_term: LongTermMemory,      # Vector DB
+        relationship: RelationshipMemory # User Profile
+    ):
+        self.short = short_term
+        self.long = long_term
+        self.relationship = relationship
+    
+    async def remember(self, content: str, metadata: dict):
+        """메모리에 저장"""
+        
+        # 단기: 현재 세션
+        await self.short.add(content, ttl=3600)
+        
+        # 장기: 중요한 것만 (중요도 판단 필요)
+        if self.is_important(content, metadata):
+            await self.long.add(content, metadata)
+        
+        # 관계: 사용자에 대해 학습한 것
+        if self.is_about_user(content):
+            await self.relationship.update(content)
+    
+    async def recall(self, query: str, k: int = 5) -> List[Memory]:
+        """메모리 검색"""
+        
+        # 단기 우선
+        short_results = await self.short.search(query)
+        
+        # 장기에서 보충
+        long_results = await self.long.search(query, k=k)
+        
+        # 관계 정보 추가
+        user_context = await self.relationship.get_context()
+        
+        return self.merge_memories(
+            short_results,
+            long_results,
+            user_context
+        )
+
+
+# 4. 인터페이스 추상화
+class LLMProvider(ABC):
+    """모든 LLM은 이 인터페이스 구현"""
+    
+    @abstractmethod
+    async def generate(
+        self,
+        messages: List[Message],
+        **kwargs
+    ) -> AsyncIterator[str]:
+        pass
+
+class AnthropicProvider(LLMProvider):
+    async def generate(self, messages, **kwargs):
+        # Anthropic API 호출
+        ...
+
+class OpenAIProvider(LLMProvider):
+    async def generate(self, messages, **kwargs):
+        # OpenAI API 호출
+        ...
+```
+
+---
+
+## 전체 시스템 구조 (최종안)
+```
+voice-partner/
+├── core/                      # 핵심 로직
+│   ├── conversation/
+│   │   ├── session.py        # 대화 세션 관리
+│   │   ├── context.py        # 컨텍스트 관리
+│   │   └── turn.py           # 턴 관리
+│   │
+│   ├── reasoning/
+│   │   ├── engine.py         # 추론 엔진
+│   │   ├── rag.py            # RAG 구현
+│   │   └── tools.py          # Tool Calling
+│   │
+│   ├── memory/
+│   │   ├── system.py         # 메모리 시스템
+│   │   ├── short_term.py     # 단기 메모리
+│   │   ├── long_term.py      # 장기 메모리 (Vector)
+│   │   └── relationship.py   # 관계 메모리
+│   │
+│   └── interfaces/
+│       ├── llm.py            # LLM 인터페이스
+│       ├── memory.py         # Memory 인터페이스
+│       └── tool.py           # Tool 인터페이스
+│
+├── providers/                 # 구현체들
+│   ├── llm/
+│   │   ├── anthropic.py
+│   │   ├── openai.py
+│   │   └── local.py          # Ollama 등
+│   │
+│   ├── memory/
+│   │   ├── chroma.py
+│   │   ├── pinecone.py
+│   │   └── sqlite.py
+│   │
+│   └── speech/
+│       ├── stt/
+│       │   ├── whisper.py
+│       │   └── google.py
+│       └── tts/
+│           ├── elevenlabs.py
+│           └── edge_tts.py
+│
+├── services/                  # 비즈니스 로직
+│   ├── voice_assistant.py    # 메인 서비스
+│   ├── event_bus.py          # 이벤트 시스템
+│   └── plugin_manager.py     # 플러그인 관리
+│
+├── api/                       # API 계층
+│   ├── gateway/              # Rust Gateway (Phase 2)
+│   └── backend/              # FastAPI
+│       ├── main.py
+│       ├── websocket.py
+│       └── rest.py
+│
+├── frontend/                  # React PWA
+│   ├── src/
+│   ├── public/
+│   └── vite.config.ts
+│
+└── config/
+    ├── philosophy.yaml       # 해웅님의 철학
+    └── settings.yaml         # 시스템 설정
+

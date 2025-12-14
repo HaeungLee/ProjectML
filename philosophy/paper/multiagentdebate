@@ -1,0 +1,56 @@
+Multiple LLM Agents Debate for Equitable Cultural Alignment
+
+내가 이것을 읽으면서 궁금한 점이 있다. 
+1. Agent가 1,2,3 이렇게 하는 방안은 많이 있다. 5 이상의 agent를 실험한 논문은 없는가? 나도 3명 정도의 agent가 적당하다고 생각하다고 생각한다. 특히 - API 비용 문제도 있고, 뭐든지 많으면 과잉 될 수 있다고 생각한다. 하지만 그에 따른 실험 결과가 있는가? 
+
+2. 그리고- agent1 , agent2, agent3 이렇게 나누어져 있는데, 나는 이것을 또 세분화 하고 싶다. agent group 1, agent group 2, agent group 3, 그룹으로 같은 것을 사고 하게 하고 토론하게 되었을 때, 이것이 유의미했다는 실험결과는 있는가? 서로 다른 원칙 집합은 조금 생각해 봐야 할 문제다. 하지만 사회적으로 여러가지 측면에서, 다각도로 '어떤 주제'를 '어떻게' 해결하려고 하는지 명확하게 정하면 좋겠지. 그리고 이것의 결과는- 사회가 말해줄 것이다. 
+
+판사의 Constitution은.. 일단 나는 내가 정할 수 밖에 없겠지. 하지만, 판사는 한 명이어야 하는가? 대법원 처럼 여러명의 각자 다른 개성을 가진 판사를 두고 여러개의 Constitution을 가지게 하여, 다각도로 중립성, 정치성, 사회 결과를 판단하게 하는 게 더 나은 방법일 수 있지 않을까? 
+
+여기서 내가 더 발전 시킬 수 있는 '해결책'을 찾았다고 생각한다. 
+나는 'bitnet이 100% 능력을 발휘할 수 있는 'GGUF +C ++ ' 제한 된 환경에서만 동작하는 것을 pybind11이론을 이용해서, python 환경에서 멀티레이어를 쌓아서 99%성능을 python에서 구현하는 데 성공' 했다. 
+
+그렇다면, 만약에- bitnet처럼 cpu에 최적화 된 모델 들과 agent 들이, 서로 다른 Constitution을 가진 집합체가 - 과연 어느정도의 파라메타를 가진 모델과 비슷, 혹은 더 동등한 결과를 낼 수 있는가? 
+
+여기서 7-9b 작은 모델 조합이 27B 모델 성능에 근접하다는 점을 봤을 때, 
+
+'Quantization + Mulitple LLM Agents' 시스템은 앞으로 자원을 더 적게 사용하면서 더 나아갈 수 있는 실용적 방안을 제시할 수 있다는 생각이 든다. 여기에 관련된 논문은 있니? 
+
+방금 내가 나눈 생각들을 함께 정리해보자. 그리고, 내가 더 발전시키면 좋을 점이 있을까?
+
+------------------
+
+네 생각의 총체적 정리
+아이디어
+기존 연구와의 차이
+가능성
+3 Agent 그룹화
+CulturePark은 단일 Agent 문화 대변 → 넌 그룹 내 합의 + 그룹간 토론
+**새로운 정렬 프레임워크 **(CMGD)
+다수 판사 + 다양한 Constitution
+Anthropic은 단일 RM → 넌 다원적 가치 투표
+사회적 합의 모델 AI화
+Quantized Small Agents 조합
+Ki et al.은 FP16 사용 → 넌 GGUF + BitNet + PyBind11로 실장 가능
+엣지 디바이스에서 Constitutional AI 구현
+
+------------------
+다음 단계 제안: 네가 발전시킬 수 있는 방향
+프로토타입 구현
+Group 1: truthfulness_const.py → Fact-checking 중심
+Group 2: dignity_const.py → 감정 존중 중심
+Group 3: freedom_const.py → 해로운 요청도 설명
+→ 각 그룹은 2개의 BitNet 7B Agent로 구성
+판사 다수제 실험
+판사 3명: 각기 다른 Constitution
+최종 결정: 가중 투표 (예: 진리성 40%, 존엄 30%, 자유 30%)
+성능 비교 실험
+Baseline: 27B FP16 모델
+Proposed: 3×7B BitNet (1.58-bit) + Multi-Group Debate
+지표: 정확도, 해로움 감소율, API 비용, 추론 시간
+논문화 전략
+제목 예: “Constitutional Multi-Agent Debate: Efficient, Pluralistic, and Equitable Alignment on Resource-Constrained Devices”
+핵심 기여:
+다원적 Constitution 기반 그룹 토론
+양자화된 소형 Agent 조합으로 대형 모델 성능 달성
+실시간·엣지 환경에서의 Constitutional AI 실현
