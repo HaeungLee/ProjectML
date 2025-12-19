@@ -1,0 +1,45 @@
+[project]
+name = "moonlight-voice-service"
+version = "0.1.0"
+description = "Moonlight Voice Service - STT/TTS 처리"
+authors = [{ name = "Haewung" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # gRPC
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    "protobuf>=4.25.0",
+    
+    # STT - OpenAI Whisper API (또는 다른 STT)
+    "openai>=1.10.0",
+    
+    # TTS
+    "edge-tts>=6.1.0",  # 무료 TTS
+    
+    # Audio Processing
+    "numpy>=1.26.0",
+    "soundfile>=0.12.0",
+    
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+

@@ -1,0 +1,75 @@
+[project]
+name = "moonlight-ai-core"
+version = "0.1.0"
+description = "Moonlight AI Core - 달빛 비서 AI 두뇌"
+authors = [{ name = "Haewung" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Web Framework
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    
+    # LangChain
+    "langchain>=0.1.0",
+    "langchain-community>=0.0.20",
+    "langchain-openai>=0.0.5",
+    
+    # OpenRouter / OpenAI
+    "openai>=1.10.0",
+    
+    # Database
+    "asyncpg>=0.29.0",
+    "psycopg[binary]>=3.1.0",
+    "pgvector>=0.2.4",
+    "redis>=5.0.0",
+    
+    # gRPC
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    "protobuf>=4.25.0",
+    
+    # Validation
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    
+    # Embeddings
+    "sentence-transformers>=2.2.0",
+    
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "httpx>=0.26.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "black>=24.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+

@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package moonlight.voice;
+
+option python_package = "moonlight.proto.voice";
+
+// Voice Service - STT/TTS 처리
+service VoiceService {
+  // STT: 음성 스트림 → 텍스트
+  rpc Transcribe(stream AudioChunk) returns (TranscribeResponse);
+  
+  // TTS: 텍스트 → 음성 스트림
+  rpc Synthesize(SynthesizeRequest) returns (stream AudioChunk);
+  
+  // 음성 인증
+  rpc VerifyVoice(VoiceVerifyRequest) returns (VoiceVerifyResponse);
+}
+
+// 오디오 청크
+message AudioChunk {
+  bytes data = 1;
+  int32 sample_rate = 2;        // 기본: 16000
+  string format = 3;            // "pcm", "wav", "mp3"
+  int32 chunk_index = 4;
+  bool is_final = 5;
+}
+
+// STT 응답
+message TranscribeResponse {
+  string text = 1;
+  float confidence = 2;         // 0.0 - 1.0
+  string language = 3;          // "ko", "en"
+  int32 duration_ms = 4;
+}
+
+// TTS 요청
+message SynthesizeRequest {
+  string text = 1;
+  string voice_id = 2;          // 음성 ID
+  string language = 3;          // "ko", "en"
+  float speed = 4;              // 0.5 - 2.0, 기본: 1.0
+  string style = 5;             // "neutral", "warm", "cheerful"
+}
+
+// 음성 인증 요청
+message VoiceVerifyRequest {
+  string user_id = 1;
+  bytes audio_sample = 2;
+  int32 sample_rate = 3;
+}
+
+// 음성 인증 응답
+message VoiceVerifyResponse {
+  bool verified = 1;
+  float confidence = 2;
+  string error_message = 3;
+}
+
+
