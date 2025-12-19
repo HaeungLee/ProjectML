@@ -19,8 +19,9 @@ Next steps:
 
 1. Start AI Core:
    cd packages/ai-core
-   pip install -e .
-   python -m src.main
+   python -m pip install uv
+   python -m uv pip install -e .
+   python -m uv run -m uvicorn src.main:app --host 0.0.0.0 --port 8000
 
 2. Start Web UI:
    cd packages/web-ui

@@ -48,8 +48,9 @@ docker-compose up -d
 
 ```bash
 cd packages/ai-core
-poetry install
-poetry run python -m src.main
+# uv 표준 (권장)
+python -m uv pip install -e .
+python -m uv run -m uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### 3. Web UI 실행
@@ -82,6 +83,7 @@ npm run dev
 
 - [최종 설계 문서](../음성비서/1214_최종설계.md)
 - [Constitution 정의](docs/constitution.yaml)
+- [로컬 실행 가이드](RUNBOOK.md)
 
 ---
 

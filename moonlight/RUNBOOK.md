@@ -53,28 +53,21 @@ docker-compose ps
 
 ## 4) AI Core 실행
 
-### 옵션 A) 빠른 E2E(최소 의존성)로 실행
+### uv 표준 (권장)
 
-현재 Phase 1(E2E)에서는 RAG/pgvector/redis/gRPC 등을 실제로 연결하지 않기 때문에, **서버 기동에 필요한 최소 패키지만 설치**해도 동작합니다.
+Windows에서 PATH 이슈를 피하기 위해 **`python -m uv`** 형태를 권장합니다.
 
 ```powershell
 cd C:\Aprojects\ProjectML\moonlight\packages\ai-core
 
-# 최소 런타임 의존성 설치
-C:\Aprojects\ProjectML\.venv\Scripts\python.exe -m pip install fastapi uvicorn[standard] httpx pydantic pydantic-settings python-dotenv pyyaml openai email-validator
+# uv 설치(최초 1회)
+python -m pip install uv
+
+# 의존성 설치 (개발용: editable)
+python -m uv pip install -e .
 
 # 서버 실행
-C:\Aprojects\ProjectML\.venv\Scripts\python.exe -m uvicorn src.main:app --host 0.0.0.0 --port 8000
-```
-
-### 옵션 B) 패키지 전체 설치(느릴 수 있음)
-
-`pyproject.toml`에 선언된 의존성을 모두 설치합니다(환경에 따라 무거울 수 있음).
-
-```powershell
-cd C:\Aprojects\ProjectML\moonlight\packages\ai-core
-C:\Aprojects\ProjectML\.venv\Scripts\python.exe -m pip install .
-C:\Aprojects\ProjectML\.venv\Scripts\python.exe -m uvicorn src.main:app --host 0.0.0.0 --port 8000
+python -m uv run -m uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -146,3 +139,8 @@ docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}"
 
 현재 AI Core WS 엔드포인트는 `/api/chat/ws` 입니다.
 - Web UI에서 WS를 붙일 계획이면 `packages/web-ui/vite.config.ts`의 WS proxy 경로를 정합성 있게 맞춰야 합니다.
+
+### (3) uv 명령이 안 잡힐 때
+
+- `uv`가 PATH에 없어도 `python -m uv ...`는 동작합니다.
+- 예: `python -m uv --version`
